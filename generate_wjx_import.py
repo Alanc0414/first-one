@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-生成问卷星最新版 Excel 导入格式
-每题占一个单元格，用 <br/> 换行，整题含选项、答案、解析
+生成问卷星最新版 Excel 导入格式（单列表格，<br/> 换行）
 """
 
 import re
@@ -10,6 +9,13 @@ from openpyxl import Workbook
 from generate_quiz import day1_data, day2_data, day3_data
 
 BR = '<br/>'
+
+# 打勾题：全部多选题 + 填空题，共15题
+SELECTED_15 = [
+    *[(day1_data, i) for i in (6, 7, 8, 9)],       # Day1 Q7-10
+    *[(day2_data, i) for i in (5, 6, 7, 8, 9)],    # Day2 Q6-10
+    *[(day3_data, i) for i in (4, 5, 6, 7, 8, 9)], # Day3 Q5-10
+]
 
 
 def clean_text(text):
@@ -64,23 +70,26 @@ def build_question_cell(num, row):
     return BR.join(parts)
 
 
-def create_wjx_excel(filename, data):
+def create_wjx_excel(filename, rows):
     wb = Workbook()
     ws = wb.active
     ws.title = 'Sheet1'
-
     ws.cell(row=1, column=1, value='题干')
 
-    for idx, row in enumerate(data, 1):
+    for idx, row in enumerate(rows, 1):
         ws.cell(row=idx + 1, column=1, value=build_question_cell(idx, row))
 
     ws.column_dimensions['A'].width = 100
     wb.save(filename)
-    print('已生成：' + filename)
+    print(f'已生成：{filename}（共 {len(rows)} 题）')
+
+
+def get_selected_rows():
+    rows = []
+    for data, index in SELECTED_15:
+        rows.append(data[index])
+    return rows
 
 
 if __name__ == '__main__':
-    create_wjx_excel('CMport_问卷星导入_Day1.xlsx', day1_data)
-    create_wjx_excel('CMport_问卷星导入_Day2.xlsx', day2_data)
-    create_wjx_excel('CMport_问卷星导入_Day3.xlsx', day3_data)
-    print('\n已按问卷星最新版单单元格格式生成（共3个，各10题）。')
+    create_wjx_excel('CMport_问卷星导入_15题.xlsx', get_selected_rows())
